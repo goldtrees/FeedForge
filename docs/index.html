@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FeedForge — RSS Feed Dashboard</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-secondary: #8b949e;
+      --accent: #58a6ff;
+      --success: #3fb950;
+      --error: #f85149;
+      --orange: #d29922;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    header h1 span { color: var(--accent); }
+    header p { color: var(--text-secondary); }
+    .meta {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .feed-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+      transition: border-color 0.2s;
+    }
+    .feed-card:hover { border-color: var(--accent); }
+    .feed-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .feed-name { font-size: 1.15rem; font-weight: 600; }
+    .feed-status {
+      font-size: 0.8rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+    .feed-status.ok { background: rgba(63,185,80,0.15); color: var(--success); }
+    .feed-status.error { background: rgba(248,81,73,0.15); color: var(--error); }
+    .feed-info {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+    .feed-actions { display: flex; gap: 0.75rem; }
+    .feed-actions a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .feed-actions a:hover { text-decoration: underline; }
+    .loading {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 3rem;
+    }
+    .empty {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 3rem;
+      background: var(--surface);
+      border-radius: 8px;
+    }
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔥 <span>Feed</span>Forge</h1>
+      <p>Config-driven RSS feed generator</p>
+      <div class="meta">
+        <span id="update-time">마지막 업데이트: 로딩 중...</span>
+        <span id="feed-count">피드: -</span>
+      </div>
+    </header>
+
+    <main id="feed-list">
+      <div class="loading">피드 정보를 불러오는 중...</div>
+    </main>
+
+    <footer>
+      Powered by <a href="https://github.com" target="_blank">GitHub Actions</a> + GitHub Pages
+    </footer>
+  </div>
+
+  <script>
+    const BASE_PATH = window.location.pathname.replace(/\/+$/, '');
+
+    async function loadMeta() {
+      try {
+        const res = await fetch(`${BASE_PATH}/meta.json?t=${Date.now()}`);
+        if (!res.ok) throw new Error('meta.json not found');
+        return await res.json();
+      } catch {
+        return null;
+      }
+    }
+
+    function formatDate(isoStr) {
+      const d = new Date(isoStr);
+      return d.toLocaleString('ko-KR', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function renderFeeds(meta) {
+      const container = document.getElementById('feed-list');
+      const updateTime = document.getElementById('update-time');
+      const feedCount = document.getElementById('feed-count');
+
+      if (!meta || !meta.feeds) {
+        container.innerHTML = '<div class="empty">아직 생성된 피드가 없습니다.<br>GitHub Actions가 실행되면 여기에 피드 목록이 표시됩니다.</div>';
+        return;
+      }
+
+      updateTime.textContent = `마지막 업데이트: ${formatDate(meta.generatedAt)}`;
+      feedCount.textContent = `피드: ${meta.feeds.length}개`;
+
+      container.innerHTML = meta.feeds.map(feed => {
+        const statusClass = feed.status === 'ok' ? 'ok' : 'error';
+        const statusText = feed.status === 'ok' ? `${feed.itemCount}개 항목` : '오류';
+        const feedUrl = `${BASE_PATH}/feeds/${feed.filename}`;
+
+        return `
+          <div class="feed-card">
+            <div class="feed-header">
+              <span class="feed-name">${feed.name}</span>
+              <span class="feed-status ${statusClass}">${statusText}</span>
+            </div>
+            ${feed.error ? `<div class="feed-info" style="color:var(--error)">⚠ ${feed.error}</div>` : ''}
+            <div class="feed-actions">
+              <a href="${feedUrl}" target="_blank">📄 RSS XML 보기</a>
+              <a href="#" onclick="copyUrl('${feedUrl}');return false;">📋 URL 복사</a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function copyUrl(relUrl) {
+      const full = window.location.origin + relUrl;
+      navigator.clipboard.writeText(full).then(() => {
+        alert('RSS URL이 클립보드에 복사되었습니다!');
+      });
+    }
+
+    loadMeta().then(renderFeeds);
+  </script>
+</body>
+</html>

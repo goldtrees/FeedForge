@@ -1,0 +1,21 @@
+{
+  "name": "feedforge",
+  "version": "1.0.0",
+  "description": "Config-driven RSS feed generator — scrape any website, filter posts, serve via GitHub Pages",
+  "main": "src/index.js",
+  "scripts": {
+    "generate": "node src/index.js",
+    "dry-run": "node src/index.js --dry-run --verbose",
+    "validate": "node src/index.js --validate"
+  },
+  "keywords": ["rss", "feed", "scraper", "github-pages"],
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.0",
+    "cheerio": "^1.0.0",
+    "dayjs": "^1.11.0",
+    "feed": "^4.2.0",
+    "iconv-lite": "^0.6.3",
+    "js-yaml": "^4.1.0"
+  }
+}

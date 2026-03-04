@@ -1,0 +1,137 @@
+# ============================================================
+# FeedForge — 피드 설정 파일
+# 새 사이트 추가: 아래 템플릿을 복사하여 selectors만 수정하세요.
+# ============================================================
+
+global:
+  # 기본 요청 설정 (피드별로 override 가능)
+  request:
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    timeout: 15000
+    retries: 3
+    retryDelay: 2000
+  # 기본 출력 설정
+  output:
+    maxItems: 30
+
+feeds:
+  # ─── theqoo 스퀘어 ───
+  - name: "theqoo-square"
+    url: "https://theqoo.net/square"
+    request:
+      encoding: "utf-8"
+    selectors:
+      # 게시물 행 목록 (각 <tr> 또는 <div>)
+      list: "table.theqoo_board tbody tr, .bd_lst tbody tr"
+      # 각 필드 추출 규칙
+      title:
+        selector: ".title a, td.title a"
+        extract: "text"
+      link:
+        selector: ".title a, td.title a"
+        extract: "attr:href"
+        baseUrl: "https://theqoo.net"
+      date:
+        selector: ".time, td.time"
+        extract: "text"
+        format: "YYYY.MM.DD HH:mm"
+      views:
+        selector: ".m_no, td.m_no:nth-child(4)"
+        extract: "number"
+      likes:
+        selector: ".m_no_voted, td.m_no:nth-child(5)"
+        extract: "number"
+      author:
+        selector: ".author, td.author"
+        extract: "text"
+    filters:
+      includeKeywords: []
+      excludeKeywords: ["광고", "공지"]
+      minViews: 0
+      minLikes: 0
+    output:
+      filename: "theqoo-square.xml"
+      maxItems: 30
+      title: "더쿠 스퀘어"
+      description: "theqoo 스퀘어 최신글 RSS 피드"
+      link: "https://theqoo.net/square"
+
+  # ─── 클리앙 전체글보기 ───
+  - name: "clien-all"
+    url: "https://www.clien.net/service/group/clien_all"
+    request:
+      encoding: "utf-8"
+    selectors:
+      list: ".list_item:not(.blocked)"
+      title:
+        selector: ".subject_fixed"
+        extract: "text"
+      link:
+        selector: ".list_subject"
+        extract: "attr:href"
+        baseUrl: "https://www.clien.net"
+      date:
+        selector: ".timestamp"
+        extract: "text"
+        format: "YYYY-MM-DD HH:mm:ss"
+      views:
+        selector: ".hit"
+        extract: "number"
+      likes:
+        selector: ".symph"
+        extract: "number"
+      author:
+        selector: ".nickname"
+        extract: "text"
+    filters:
+      includeKeywords: []
+      excludeKeywords: ["광고", "공지"]
+      minViews: 0
+      minLikes: 0
+    output:
+      filename: "clien-all.xml"
+      maxItems: 30
+      title: "클리앙 전체글보기"
+      description: "클리앙 전체글보기 RSS 피드"
+      link: "https://www.clien.net/service/group/clien_all"
+
+# ─── 새 사이트 추가 템플릿 (복사 후 수정) ───
+# - name: "my-site"
+#   url: "https://example.com/board"
+#   request:
+#     encoding: "utf-8"              # euc-kr, utf-8 등
+#     headers:                       # 필요 시 커스텀 헤더
+#       Referer: "https://example.com"
+#   selectors:
+#     list: ".post-list .post-item"  # 게시물 목록 셀렉터
+#     title:
+#       selector: ".post-title a"
+#       extract: "text"
+#     link:
+#       selector: ".post-title a"
+#       extract: "attr:href"
+#       baseUrl: "https://example.com"
+#     date:
+#       selector: ".post-date"
+#       extract: "text"
+#       format: "YYYY-MM-DD"
+#     views:
+#       selector: ".post-views"
+#       extract: "number"
+#     likes:
+#       selector: ".post-likes"
+#       extract: "number"
+#     author:
+#       selector: ".post-author"
+#       extract: "text"
+#   filters:
+#     includeKeywords: ["키워드1", "키워드2"]
+#     excludeKeywords: ["제외어"]
+#     minViews: 100
+#     minLikes: 5
+#   output:
+#     filename: "my-site.xml"
+#     maxItems: 30
+#     title: "내 사이트 피드"
+#     description: "설명"
+#     link: "https://example.com/board"
