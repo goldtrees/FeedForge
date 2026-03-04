@@ -5,8 +5,8 @@
  * 모든 필터 조건은 선택적이며, 설정된 조건들은 AND로 결합됩니다.
  *
  * 지원 필터:
- *   - includeKeywords: 제목에 하나 이상 포함 시 통과 (OR)
- *   - excludeKeywords: 제목에 하나라도 포함 시 제외
+ *   - includeKeywords: 제목 또는 게시물 번호에 하나 이상 포함 시 통과 (OR)
+ *   - excludeKeywords: 제목 또는 게시물 번호에 하나라도 포함 시 제외
  *   - minViews: 최소 조회수
  *   - minLikes: 최소 추천수
  */
@@ -32,20 +32,23 @@ function applyFilters(items, filters = {}) {
 
   return items.filter((item) => {
     const title = (item.title || '').toLowerCase();
+    const postNumber = (item.postNumber || '').toLowerCase();
 
-    // includeKeywords — 하나 이상 포함해야 통과 (비어있으면 skip)
+    // includeKeywords — 제목 또는 게시물 번호에 하나 이상 포함 시 통과 (비어있으면 skip)
     if (includeKeywords.length > 0) {
-      const hasInclude = includeKeywords.some((kw) =>
-        title.includes(kw.toLowerCase())
-      );
+      const hasInclude = includeKeywords.some((kw) => {
+        const kwLower = kw.toLowerCase();
+        return title.includes(kwLower) || postNumber.includes(kwLower);
+      });
       if (!hasInclude) return false;
     }
 
-    // excludeKeywords — 하나라도 포함하면 제외
+    // excludeKeywords — 제목 또는 게시물 번호에 하나라도 포함하면 제외
     if (excludeKeywords.length > 0) {
-      const hasExclude = excludeKeywords.some((kw) =>
-        title.includes(kw.toLowerCase())
-      );
+      const hasExclude = excludeKeywords.some((kw) => {
+        const kwLower = kw.toLowerCase();
+        return title.includes(kwLower) || postNumber.includes(kwLower);
+      });
       if (hasExclude) return false;
     }
 

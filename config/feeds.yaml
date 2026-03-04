@@ -41,6 +41,9 @@ feeds:
       likes:
         selector: ".m_no_voted, td.m_no:nth-child(5)"
         extract: "number"
+      postNumber:
+        selector: ".no, td.no"
+        extract: "text"
       author:
         selector: ".author, td.author"
         extract: "text"
@@ -80,6 +83,9 @@ feeds:
       likes:
         selector: ".symph"
         extract: "number"
+      postNumber:
+        selector: ".list_number"
+        extract: "text"
       author:
         selector: ".nickname"
         extract: "text"
@@ -121,6 +127,9 @@ feeds:
 #     likes:
 #       selector: ".post-likes"
 #       extract: "number"
+#     postNumber:
+#       selector: ".post-number"
+#       extract: "text"
 #     author:
 #       selector: ".post-author"
 #       extract: "text"
