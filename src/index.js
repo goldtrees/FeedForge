@@ -85,7 +85,7 @@ async function processFeed(feedConfig, globalConfig) {
     items.slice(0, 3).forEach((item, i) => {
       console.log(`  [${i + 1}] ${item.title}`);
       console.log(`      링크: ${item.link}`);
-      console.log(`      조회: ${item.views} | 추천: ${item.likes} | 작성자: ${item.author}`);
+      console.log(`      번호: ${item.no || '-'} | 조회: ${item.views} | 추천: ${item.likes} | 작성자: ${item.author}`);
     });
   }
 

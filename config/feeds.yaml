@@ -20,10 +20,20 @@ feeds:
     url: "https://theqoo.net/square"
     request:
       encoding: "utf-8"
+    pagination:
+      param: "page"           # 페이지 파라미터 이름
+      startPage: 1            # 시작 페이지 번호
+      maxPages: 3             # 최대 수집 페이지 수
+      step: 1                 # 페이지 번호 증가값
+      delay: 1500             # 페이지 간 딜레이 (ms)
+      stopOnError: false      # 오류 시 중단 여부
     selectors:
       # 게시물 행 목록 (각 <tr> 또는 <div>)
       list: "table.theqoo_board tbody tr, .bd_lst tbody tr"
       # 각 필드 추출 규칙
+      no:
+        selector: ".no, td.no"
+        extract: "number"
       title:
         selector: ".title a, td.title a"
         extract: "text"
@@ -49,6 +59,8 @@ feeds:
       excludeKeywords: ["광고", "공지"]
       minViews: 0
       minLikes: 0
+      minNo: 0
+      maxNo: 0
     output:
       filename: "theqoo-square.xml"
       maxItems: 30
@@ -61,8 +73,18 @@ feeds:
     url: "https://www.clien.net/service/group/clien_all"
     request:
       encoding: "utf-8"
+    pagination:
+      param: "po"             # 클리앙은 po 파라미터 사용
+      startPage: 0            # 클리앙은 0부터 시작
+      maxPages: 3
+      step: 1
+      delay: 1500
+      stopOnError: false
     selectors:
       list: ".list_item:not(.blocked)"
+      no:
+        selector: ".list_number .no"
+        extract: "number"
       title:
         selector: ".subject_fixed"
         extract: "text"
@@ -88,6 +110,8 @@ feeds:
       excludeKeywords: ["광고", "공지"]
       minViews: 0
       minLikes: 0
+      minNo: 0
+      maxNo: 0
     output:
       filename: "clien-all.xml"
       maxItems: 30
@@ -102,8 +126,18 @@ feeds:
 #     encoding: "utf-8"              # euc-kr, utf-8 등
 #     headers:                       # 필요 시 커스텀 헤더
 #       Referer: "https://example.com"
+#   pagination:
+#     param: "page"                  # 페이지 파라미터 이름
+#     startPage: 1                   # 시작 페이지 번호
+#     maxPages: 3                    # 최대 수집 페이지 수
+#     step: 1                        # 페이지 번호 증가값
+#     delay: 1500                    # 페이지 간 딜레이 (ms)
+#     stopOnError: false             # 오류 시 중단 여부
 #   selectors:
 #     list: ".post-list .post-item"  # 게시물 목록 셀렉터
+#     no:
+#       selector: ".post-no"
+#       extract: "number"
 #     title:
 #       selector: ".post-title a"
 #       extract: "text"
@@ -129,6 +163,8 @@ feeds:
 #     excludeKeywords: ["제외어"]
 #     minViews: 100
 #     minLikes: 5
+#     minNo: 0
+#     maxNo: 0
 #   output:
 #     filename: "my-site.xml"
 #     maxItems: 30

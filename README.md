@@ -53,8 +53,18 @@ npm run generate
 feeds:
   - name: "my-new-site"
     url: "https://example.com/board"
+    pagination:
+      param: "page"              # 페이지 파라미터 이름
+      startPage: 1               # 시작 페이지 번호
+      maxPages: 3                # 최대 수집 페이지 수
+      step: 1                    # 페이지 번호 증가값
+      delay: 1500                # 페이지 간 딜레이 (ms)
+      stopOnError: false         # 오류 시 중단 여부
     selectors:
       list: ".post-list .post-item"      # 게시물 행 셀렉터
+      no:
+        selector: ".post-no"
+        extract: "number"
       title:
         selector: ".post-title a"
         extract: "text"
@@ -68,6 +78,8 @@ feeds:
     filters:
       includeKeywords: ["관심키워드"]
       minViews: 100
+      minNo: 0
+      maxNo: 0
     output:
       filename: "my-new-site.xml"
       title: "내 피드"
@@ -104,6 +116,19 @@ git add . && git commit -m "feat: add my-new-site feed" && git push
 | `baseUrl` | 상대 URL → 절대 URL 변환 시 기준 URL |
 | `format` | 날짜 파싱 포맷 (Day.js 형식, 예: `YYYY.MM.DD HH:mm`) |
 
+### 페이지네이션 옵션
+
+| 옵션 | 기본값 | 설명 |
+|------|--------|------|
+| `param` | `page` | URL 쿼리 파라미터 이름 |
+| `startPage` | `1` | 시작 페이지 번호 |
+| `maxPages` | `3` | 최대 수집 페이지 수 |
+| `step` | `1` | 페이지 번호 증가값 |
+| `delay` | `1000` | 페이지 간 딜레이 (ms) |
+| `stopOnError` | `false` | 오류 발생 시 수집 중단 여부 |
+
+> 페이지네이션 설정 시 자동으로 **중복 제거**(link 기준)가 적용됩니다.
+
 ### 필터 옵션
 
 | 옵션 | 설명 |
@@ -112,6 +137,8 @@ git add . && git commit -m "feat: add my-new-site feed" && git push
 | `excludeKeywords` | 제목에 하나라도 포함 시 제외 |
 | `minViews` | 최소 조회수 |
 | `minLikes` | 최소 추천수 |
+| `minNo` | 최소 게시물 번호 |
+| `maxNo` | 최대 게시물 번호 |
 
 ### 요청 옵션
 

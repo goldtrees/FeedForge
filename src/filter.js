@@ -9,6 +9,8 @@
  *   - excludeKeywords: 제목에 하나라도 포함 시 제외
  *   - minViews: 최소 조회수
  *   - minLikes: 최소 추천수
+ *   - minNo: 최소 게시물 번호
+ *   - maxNo: 최대 게시물 번호
  */
 
 /**
@@ -28,6 +30,8 @@ function applyFilters(items, filters = {}) {
     excludeKeywords = [],
     minViews = 0,
     minLikes = 0,
+    minNo = 0,
+    maxNo = 0,
   } = filters;
 
   return items.filter((item) => {
@@ -61,6 +65,18 @@ function applyFilters(items, filters = {}) {
       if (likes < minLikes) return false;
     }
 
+    // minNo — 최소 게시물 번호
+    if (minNo > 0) {
+      const no = typeof item.no === 'number' ? item.no : parseInt(item.no, 10) || 0;
+      if (no < minNo) return false;
+    }
+
+    // maxNo — 최대 게시물 번호
+    if (maxNo > 0) {
+      const no = typeof item.no === 'number' ? item.no : parseInt(item.no, 10) || 0;
+      if (no > maxNo) return false;
+    }
+
     return true;
   });
 }
@@ -78,6 +94,8 @@ function filterSummary(beforeCount, afterCount, filters) {
   }
   if (filters.minViews > 0) parts.push(`minViews=${filters.minViews}`);
   if (filters.minLikes > 0) parts.push(`minLikes=${filters.minLikes}`);
+  if (filters.minNo > 0) parts.push(`minNo=${filters.minNo}`);
+  if (filters.maxNo > 0) parts.push(`maxNo=${filters.maxNo}`);
 
   const filterDesc = parts.length > 0 ? parts.join(', ') : '없음';
   return `${beforeCount}개 → ${afterCount}개 (필터: ${filterDesc})`;

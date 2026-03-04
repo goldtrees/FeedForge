@@ -15,16 +15,79 @@ const DEFAULT_USER_AGENT =
 
 /**
  * 피드 설정에 따라 대상 URL을 스크래핑하고 게시물 목록을 반환합니다.
+ * pagination 설정이 있으면 여러 페이지를 순회하며 수집합니다.
  *
  * @param {object} feedConfig - feeds.yaml의 단일 피드 설정
  * @param {object} globalConfig - feeds.yaml의 global 설정
- * @returns {Promise<Array<{title,link,date,author,views,likes}>>}
+ * @returns {Promise<Array<{title,link,date,author,views,likes,no}>>}
  */
 async function scrape(feedConfig, globalConfig = {}) {
   const reqConfig = mergeRequestConfig(feedConfig.request, globalConfig.request);
-  const html = await fetchPage(feedConfig.url, reqConfig);
-  const items = parsePage(html, feedConfig.selectors);
-  return items;
+  const pagination = feedConfig.pagination || null;
+
+  let allItems = [];
+
+  if (pagination && pagination.maxPages > 1) {
+    // ─── 페이지네이션 모드 ───
+    const maxPages = pagination.maxPages || 3;
+    const paramName = pagination.param || 'page';
+    const startPage = pagination.startPage ?? 1;
+    const step = pagination.step ?? 1;
+    const delay = pagination.delay ?? 1000;
+
+    for (let i = 0; i < maxPages; i++) {
+      const pageNum = startPage + i * step;
+      const pageUrl = buildPageUrl(feedConfig.url, paramName, pageNum);
+      console.log(`  페이지 ${i + 1}/${maxPages}: ${pageUrl}`);
+
+      try {
+        const html = await fetchPage(pageUrl, reqConfig);
+        const items = parsePage(html, feedConfig.selectors);
+        allItems = allItems.concat(items);
+        console.log(`    → ${items.length}개 항목 수집`);
+      } catch (err) {
+        console.warn(`    ⚠ 페이지 ${pageNum} 실패: ${err.message}`);
+        // stopOnError 설정 시 중단, 기본은 계속 진행
+        if (pagination.stopOnError) break;
+      }
+
+      // 마지막 페이지가 아니면 딜레이
+      if (i < maxPages - 1 && delay > 0) {
+        await sleep(delay);
+      }
+    }
+  } else {
+    // ─── 단일 페이지 모드 ───
+    const html = await fetchPage(feedConfig.url, reqConfig);
+    allItems = parsePage(html, feedConfig.selectors);
+  }
+
+  // ─── 중복 제거 (link 기준) ───
+  allItems = deduplicateItems(allItems);
+
+  return allItems;
+}
+
+/**
+ * 페이지네이션 URL을 생성합니다.
+ * URL에 이미 쿼리 파라미터가 있으면 &로 추가, 없으면 ?로 추가합니다.
+ */
+function buildPageUrl(baseUrl, paramName, pageNum) {
+  const url = new URL(baseUrl);
+  url.searchParams.set(paramName, String(pageNum));
+  return url.toString();
+}
+
+/**
+ * link 기준으로 중복 항목을 제거합니다. 먼저 등장한 항목을 유지합니다.
+ */
+function deduplicateItems(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    if (seen.has(item.link)) return false;
+    seen.add(item.link);
+    return true;
+  });
 }
 
 /**
@@ -103,6 +166,7 @@ function parsePage(html, selectors) {
       const item = {
         title,
         link,
+        no: extractField($, row, selectors.no) || '',
         date: extractField($, row, selectors.date) || new Date().toISOString(),
         author: extractField($, row, selectors.author) || '',
         views: extractField($, row, selectors.views) || 0,
@@ -137,4 +201,4 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-module.exports = { scrape, fetchPage, parsePage };
+module.exports = { scrape, fetchPage, parsePage, deduplicateItems, buildPageUrl };
