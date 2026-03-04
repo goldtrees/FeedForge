@@ -83,7 +83,7 @@ async function processFeed(feedConfig, globalConfig) {
   if (OPTIONS.verbose && items.length > 0) {
     console.log(`  ── 첫 3개 항목 미리보기 ──`);
     items.slice(0, 3).forEach((item, i) => {
-      console.log(`  [${i + 1}] ${item.title}`);
+      console.log(`  [${i + 1}] ${item.postNumber ? `#${item.postNumber} ` : ''}${item.title}`);
       console.log(`      링크: ${item.link}`);
       console.log(`      번호: ${item.no || '-'} | 조회: ${item.views} | 추천: ${item.likes} | 작성자: ${item.author}`);
     });

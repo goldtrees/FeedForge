@@ -72,7 +72,7 @@ function generateRSS(items, outputConfig, dryRun = false) {
  */
 function buildDescription(item) {
   const parts = [];
-  if (item.no) parts.push(`번호: ${item.no}`);
+  if (item.postNumber) parts.push(`번호: ${item.postNumber}`);
   if (item.author) parts.push(`작성자: ${item.author}`);
   if (item.views) parts.push(`조회: ${item.views}`);
   if (item.likes) parts.push(`추천: ${item.likes}`);

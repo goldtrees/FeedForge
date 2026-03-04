@@ -171,6 +171,7 @@ function parsePage(html, selectors) {
         author: extractField($, row, selectors.author) || '',
         views: extractField($, row, selectors.views) || 0,
         likes: extractField($, row, selectors.likes) || 0,
+        postNumber: extractField($, row, selectors.postNumber) || '',
       };
 
       items.push(item);
