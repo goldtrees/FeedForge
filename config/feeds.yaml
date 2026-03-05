@@ -23,7 +23,7 @@ feeds:
     pagination:
       param: "page"           # 페이지 파라미터 이름
       startPage: 1            # 시작 페이지 번호
-      maxPages: 3             # 최대 수집 페이지 수
+      maxPages: 5             # 최대 수집 페이지 수
       step: 1                 # 페이지 번호 증가값
       delay: 1500             # 페이지 간 딜레이 (ms)
       stopOnError: false      # 오류 시 중단 여부
@@ -66,7 +66,7 @@ feeds:
       maxNo: 0
     output:
       filename: "theqoo-square.xml"
-      maxItems: 30
+      maxItems: 100
       title: "더쿠 스퀘어"
       description: "theqoo 스퀘어 최신글 RSS 피드"
       link: "https://theqoo.net/square"
@@ -79,7 +79,7 @@ feeds:
     pagination:
       param: "po"             # 클리앙은 po 파라미터 사용
       startPage: 0            # 클리앙은 0부터 시작
-      maxPages: 3
+      maxPages: 5
       step: 1
       delay: 1500
       stopOnError: false
@@ -120,7 +120,7 @@ feeds:
       maxNo: 0
     output:
       filename: "clien-all.xml"
-      maxItems: 30
+      maxItems: 100
       title: "클리앙 전체글보기"
       description: "클리앙 전체글보기 RSS 피드"
       link: "https://www.clien.net/service/group/clien_all"
