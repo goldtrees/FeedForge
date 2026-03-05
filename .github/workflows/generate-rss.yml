@@ -3,7 +3,7 @@ name: Generate RSS Feeds
 on:
   # 15분 간격 스케줄 (Public 리포 — Actions 무제한)
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '5,15,25,35,45,55 * * * *'
 
   # 수동 트리거
   workflow_dispatch:
