@@ -8,6 +8,13 @@
       "itemCount": 100,
       "status": "ok",
       "error": null
+    },
+    {
+      "name": "clien-all",
+      "filename": "clien-all.xml",
+      "itemCount": 100,
+      "status": "ok",
+      "error": null
     }
   ]
 }
