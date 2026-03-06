@@ -75,20 +75,12 @@ function generateRSS(items, outputConfig, dryRun = false) {
  * 게시물 메타정보를 description에 포함합니다.
  */
 function buildDescription(item) {
-  const meta = [];
-  if (item.category) meta.push(`카테고리: ${item.category}`);
-  if (item.postNumber) meta.push(`번호: ${item.postNumber}`);
-  if (item.author) meta.push(`작성자: ${item.author}`);
-  if (item.views) meta.push(`조회: ${item.views}`);
-  if (item.likes) meta.push(`추천: ${item.likes}`);
-  const metaLine = meta.length > 0 ? meta.join(' | ') : '';
-
-  if (item.content) {
-    return metaLine
-      ? `${item.content}<hr/><small>${metaLine}</small>`
-      : item.content;
-  }
-  return metaLine || item.title;
+  const parts = [];
+  if (item.category) parts.push(`[${item.category}]`);
+  if (item.author) parts.push(item.author);
+  if (item.views) parts.push(`조회 ${item.views}`);
+  if (item.likes) parts.push(`추천 ${item.likes}`);
+  return parts.length > 0 ? parts.join(' · ') : item.title;
 }
 
 /**
