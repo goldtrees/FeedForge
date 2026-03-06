@@ -42,14 +42,18 @@ function generateRSS(items, outputConfig, dryRun = false) {
   });
 
   for (const item of limitedItems) {
-    feed.addItem({
+    const feedItem = {
       title: item.title,
       id: item.link,
       link: item.link,
       date: item.date ? new Date(item.date) : new Date(),
       author: item.author ? [{ name: item.author }] : [],
       description: buildDescription(item),
-    });
+    };
+    if (item.category) {
+      feedItem.category = [{ name: item.category }];
+    }
+    feed.addItem(feedItem);
   }
 
   const xml = feed.rss2();
@@ -72,6 +76,7 @@ function generateRSS(items, outputConfig, dryRun = false) {
  */
 function buildDescription(item) {
   const parts = [];
+  if (item.category) parts.push(`카테고리: ${item.category}`);
   if (item.postNumber) parts.push(`번호: ${item.postNumber}`);
   if (item.author) parts.push(`작성자: ${item.author}`);
   if (item.views) parts.push(`조회: ${item.views}`);

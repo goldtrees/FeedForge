@@ -41,21 +41,21 @@ feeds:
         selector: ".title a, td.title a"
         extract: "attr:href"
         baseUrl: "https://theqoo.net"
+        stripParams: ["page"]    # 페이지네이션 파라미터 제거
       date:
         selector: ".time, td.time"
         extract: "text"
         format: "YYYY.MM.DD HH:mm"
+      category:
+        selector: "td.cate, .cate"
+        extract: "text"
       views:
-        selector: ".m_no, td.m_no:nth-child(4)"
+        selector: "td.m_no:last-child, .m_no:last-child"
         extract: "number"
-      likes:
-        selector: ".m_no_voted, td.m_no:nth-child(5)"
-        extract: "number"
+      # likes: 목록 페이지에 추천수 컬럼 없음 (상세 페이지에만 존재)
+      # author: 목록 페이지에 작성자 컬럼 없음 (상세 페이지에만 존재)
       postNumber:
         selector: ".no, td.no"
-        extract: "text"
-      author:
-        selector: ".author, td.author"
         extract: "text"
     filters:
       includeKeywords: []

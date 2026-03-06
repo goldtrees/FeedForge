@@ -158,10 +158,21 @@ function parsePage(html, selectors) {
   rows.each((_, row) => {
     try {
       const title = extractField($, row, selectors.title);
-      const link = extractField($, row, selectors.link);
+      let link = extractField($, row, selectors.link);
 
       // 제목과 링크는 필수
       if (!title || !link) return;
+
+      // stripParams — 링크에서 특정 쿼리 파라미터 제거
+      if (selectors.link?.stripParams?.length && link.startsWith('http')) {
+        try {
+          const url = new URL(link);
+          for (const param of selectors.link.stripParams) {
+            url.searchParams.delete(param);
+          }
+          link = url.toString();
+        } catch { /* URL 파싱 실패 시 원본 유지 */ }
+      }
 
       const item = {
         title,
@@ -169,6 +180,7 @@ function parsePage(html, selectors) {
         no: extractField($, row, selectors.no) || '',
         date: extractField($, row, selectors.date) || new Date().toISOString(),
         author: extractField($, row, selectors.author) || '',
+        category: extractField($, row, selectors.category) || '',
         views: extractField($, row, selectors.views) || 0,
         likes: extractField($, row, selectors.likes) || 0,
         postNumber: extractField($, row, selectors.postNumber) || '',
