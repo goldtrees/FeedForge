@@ -70,6 +70,12 @@ feeds:
       title: "더쿠 스퀘어"
       description: "theqoo 스퀘어 최신글 RSS 피드"
       link: "https://theqoo.net/square"
+    detailPage:
+      content:
+        selector: ".rd_body .xe_content, .rd_body"
+        extract: "html"
+      maxItems: 30
+      delay: 1000
 
   # ─── 클리앙 전체글보기 ───
   - name: "clien-all"

@@ -65,6 +65,11 @@ async function scrape(feedConfig, globalConfig = {}) {
   // ─── 중복 제거 (link 기준) ───
   allItems = deduplicateItems(allItems);
 
+  // ─── 상세 페이지 본문 수집 ───
+  if (feedConfig.detailPage) {
+    allItems = await fetchDetailPages(allItems, feedConfig.detailPage, reqConfig);
+  }
+
   return allItems;
 }
 
@@ -212,6 +217,37 @@ function mergeRequestConfig(feedReq = {}, globalReq = {}) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * 상세 페이지에서 본문 콘텐츠를 가져와 각 item.content에 저장합니다.
+ */
+async function fetchDetailPages(items, detailConfig, reqConfig) {
+  const max = detailConfig.maxItems || 30;
+  const delay = detailConfig.delay || 1000;
+  const target = items.slice(0, max);
+
+  console.log(`  상세 페이지 본문 수집: ${target.length}개 항목`);
+
+  for (let i = 0; i < target.length; i++) {
+    const item = target[i];
+    try {
+      const html = await fetchPage(item.link, reqConfig);
+      const $ = cheerio.load(html);
+      const content = extractField($, $.root(), detailConfig.content);
+      if (content) {
+        item.content = content;
+      }
+    } catch (err) {
+      console.warn(`    ⚠ 상세 페이지 실패 [${i + 1}/${target.length}]: ${err.message}`);
+    }
+
+    if (i < target.length - 1 && delay > 0) {
+      await sleep(delay);
+    }
+  }
+
+  return items;
 }
 
 module.exports = { scrape, fetchPage, parsePage, deduplicateItems, buildPageUrl };
