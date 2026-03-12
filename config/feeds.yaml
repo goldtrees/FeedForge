@@ -59,7 +59,7 @@ feeds:
         extract: "text"
     filters:
       includeKeywords: []
-      excludeKeywords: ["광고", "공지"]
+      excludeKeywords: ["광고", "공지", "인터넷가입", "야간상담", "비밀혜택"]
       minViews: 0
       minLikes: 0
       minNo: 0
@@ -113,7 +113,7 @@ feeds:
         extract: "text"
     filters:
       includeKeywords: []
-      excludeKeywords: ["광고", "공지"]
+      excludeKeywords: ["광고", "공지", "인터넷가입", "야간상담", "비밀혜택"]
       minViews: 0
       minLikes: 0
       minNo: 0
