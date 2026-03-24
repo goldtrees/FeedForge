@@ -13,6 +13,7 @@ global:
   # 기본 출력 설정
   output:
     maxItems: 30
+    sortOrder: desc          # 정렬 순서: desc(최신순, 기본값) / asc(오래된순)
 
 feeds:
   # ─── theqoo 스퀘어 ───
@@ -67,6 +68,7 @@ feeds:
     output:
       filename: "theqoo-square.xml"
       maxItems: 100
+      sortOrder: desc          # desc: 최신순 / asc: 오래된순 (생략 시 global 설정 사용)
       title: "더쿠 스퀘어"
       description: "theqoo 스퀘어 최신글 RSS 피드"
       link: "https://theqoo.net/square"

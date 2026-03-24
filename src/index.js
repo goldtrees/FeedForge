@@ -95,9 +95,10 @@ async function processFeed(feedConfig, globalConfig) {
   console.log(`  필터링: ${summary}`);
 
   // 3. RSS 생성
-  const globalMaxItems = globalConfig.output?.maxItems || 30;
+  const globalOutput = globalConfig.output || {};
   const outputConfig = {
-    maxItems: globalMaxItems,
+    maxItems: globalOutput.maxItems || 30,
+    sortOrder: globalOutput.sortOrder || 'desc',
     ...feedConfig.output,
   };
 
