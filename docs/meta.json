@@ -1,11 +1,11 @@
 {
   "generator": "FeedForge",
-  "generatedAt": "2026-05-13T12:18:31.026Z",
+  "generatedAt": "2026-05-13T15:17:26.994Z",
   "feeds": [
     {
       "name": "theqoo-square",
       "filename": "theqoo-square.xml",
-      "itemCount": 99,
+      "itemCount": 97,
       "status": "ok",
       "error": null
     },
