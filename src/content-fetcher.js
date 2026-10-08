@@ -32,7 +32,8 @@ async function fillContents(items, contentConfig, reqConfig, previousXmlPath, fe
 
   for (const item of items) {
     if (cache.has(item.link)) {
-      item.content = cache.get(item.link);
+      // 이전 버전에서 저장된 본문에도 링크 변환을 적용 (멱등)
+      item.content = linkifyContent(cache.get(item.link));
       stats.cached++;
       continue;
     }
@@ -124,6 +125,9 @@ function extractContent(html, selector, pageUrl) {
     if (href) a.attr('href', href);
   });
 
+  // 본문에 텍스트로만 들어간 URL(더쿠는 X/인스타/유튜브를 URL 텍스트로 저장하고 JS로 임베드) → 링크
+  linkifyNode($, body);
+
   // 이벤트 핸들러/인라인 스타일 제거
   body.find('*').each((_, el) => {
     for (const name of Object.keys(el.attribs || {})) {
@@ -138,16 +142,72 @@ function extractContent(html, selector, pageUrl) {
 }
 
 /**
+ * 본문 HTML의 텍스트 URL을 링크로 변환합니다. 이미 링크인 URL은 건드리지 않습니다.
+ */
+function linkifyContent(html) {
+  const $ = cheerio.load(`<div id="ff-root">${html}</div>`, null, false);
+  const root = $('#ff-root');
+  linkifyNode($, root);
+  return root.html();
+}
+
+const URL_PATTERN = /https?:\/\/[^\s<>"'()\[\]]+/g;
+
+function linkifyNode($, root) {
+  const textNodes = [];
+  const walk = (node) => {
+    for (const child of node.children || []) {
+      if (child.type === 'text') textNodes.push(child);
+      else if (child.type === 'tag' && child.name !== 'a') walk(child);
+    }
+  };
+  walk(root.get(0));
+
+  for (const node of textNodes) {
+    const text = node.data;
+    if (!URL_PATTERN.test(text)) continue;
+    URL_PATTERN.lastIndex = 0;
+
+    let html = '';
+    let last = 0;
+    for (const match of text.matchAll(URL_PATTERN)) {
+      // 문장부호로 끝나는 경우 URL에서 제외
+      const url = match[0].replace(/[.,!?;:]+$/, '');
+      html += escapeHtml(text.slice(last, match.index)) + urlToHtml(url);
+      last = match.index + url.length;
+    }
+    html += escapeHtml(text.slice(last));
+    $(node).replaceWith(html);
+  }
+}
+
+/**
+ * URL을 리더 앱용 HTML로 변환합니다. 유튜브는 썸네일, X/인스타는 라벨을 붙입니다.
+ */
+function urlToHtml(url) {
+  if (matchYoutubeId(url)) return youtubeAnchor(matchYoutubeId(url));
+  const href = escapeAttr(url);
+  let label = '';
+  if (/^https?:\/\/(www\.|mobile\.)?(x|twitter)\.com\//.test(url)) label = 'X(트위터) ';
+  else if (/^https?:\/\/(www\.)?instagram\.com\//.test(url)) label = '인스타그램 ';
+  return label
+    ? `<a href="${href}">▶ ${label}게시물 보기</a><br><a href="${href}">${escapeHtml(url)}</a>`
+    : `<a href="${href}">${escapeHtml(url)}</a>`;
+}
+
+/**
  * iframe src를 링크 HTML로 변환합니다. 유튜브는 썸네일을 함께 표시합니다.
  */
 function embedLink(src) {
   const youtubeId = matchYoutubeId(src);
-  if (youtubeId) {
-    const watchUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
-    const thumb = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
-    return `<p><a href="${watchUrl}"><img src="${thumb}" alt="YouTube 동영상" referrerpolicy="no-referrer"><br>▶ YouTube에서 보기</a></p>`;
-  }
+  if (youtubeId) return `<p>${youtubeAnchor(youtubeId)}</p>`;
   return `<p><a href="${escapeAttr(src)}">▶ 임베드 콘텐츠 보기</a></p>`;
+}
+
+function youtubeAnchor(youtubeId) {
+  const watchUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
+  const thumb = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+  return `<a href="${watchUrl}"><img src="${thumb}" alt="YouTube 동영상" referrerpolicy="no-referrer"><br>▶ YouTube에서 보기</a>`;
 }
 
 function matchYoutubeId(src) {
@@ -186,6 +246,10 @@ function absoluteUrl(href, base) {
   }
 }
 
+function escapeHtml(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function escapeAttr(value) {
   return String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
@@ -194,4 +258,4 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-module.exports = { fillContents, extractContent, loadContentCache };
+module.exports = { fillContents, extractContent, linkifyContent, loadContentCache };

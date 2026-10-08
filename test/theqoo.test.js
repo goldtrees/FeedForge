@@ -10,7 +10,7 @@ const os = require('os');
 const path = require('path');
 const yaml = require('js-yaml');
 const { parseDate } = require('../src/extractors');
-const { extractContent, fillContents } = require('../src/content-fetcher');
+const { extractContent, fillContents, linkifyContent } = require('../src/content-fetcher');
 const { generateRSS } = require('../src/rss-generator');
 
 const config = yaml.load(
@@ -97,6 +97,21 @@ async function runTest(name, fn) {
     assert.ok(html.includes('X(트위터)에서 보기'));
     assert.ok(html.includes('href="https://www.instagram.com/p/ABC/"'));
     assert.ok(!html.includes('<iframe') && !html.includes('<script') && !html.includes('onclick'));
+  });
+
+  await runTest('텍스트 URL(더쿠의 X/인스타/유튜브 저장 방식) → 링크·썸네일, 멱등', () => {
+    // 실제 더쿠 본문 형태: 임베드가 URL 텍스트로만 저장됨
+    const raw =
+      '<p>https://x.com/nhk_news/status/2108301924646949374</p>' +
+      '<p>https://www.instagram.com/reel/DeNzB11Sdn9/</p>' +
+      '<p>https://m.youtube.com/shorts/TAb3qp3iaUI?si=7abc</p>' +
+      '<p>공식(http://nhk.jp/event)에서 보세요.</p>';
+    const html = linkifyContent(raw);
+    assert.ok(html.includes('<a href="https://x.com/nhk_news/status/2108301924646949374">▶ X(트위터) 게시물 보기</a>'));
+    assert.ok(html.includes('<a href="https://www.instagram.com/reel/DeNzB11Sdn9/">▶ 인스타그램 게시물 보기</a>'));
+    assert.ok(html.includes('<img src="https://img.youtube.com/vi/TAb3qp3iaUI/hqdefault.jpg"'));
+    assert.ok(html.includes('(<a href="http://nhk.jp/event">http://nhk.jp/event</a>)에서'));
+    assert.strictEqual(linkifyContent(html), html);
   });
 
   await runTest('이전 피드의 본문은 재요청하지 않음 + maxFetch 상한', async () => {
