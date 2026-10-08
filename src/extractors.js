@@ -7,14 +7,18 @@
 
 const dayjs = require('dayjs');
 const customParseFormat = require('dayjs/plugin/customParseFormat');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
 dayjs.extend(customParseFormat);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 /**
  * 엘리먼트에서 지정된 방식으로 값을 추출합니다.
  *
  * @param {import('cheerio').CheerioAPI} $ - cheerio 인스턴스
  * @param {import('cheerio').Cheerio} context - 검색할 부모 엘리먼트
- * @param {object} fieldConfig - 필드 설정 { selector, extract, baseUrl?, format? }
+ * @param {object} fieldConfig - 필드 설정 { selector, extract, baseUrl?, format?, timezone? }
  * @returns {string|number|null} 추출된 값
  */
 function extractField($, context, fieldConfig) {
@@ -36,7 +40,7 @@ function extractField($, context, fieldConfig) {
 
   // format — 날짜 파싱
   if (fieldConfig.format && typeof value === 'string') {
-    value = parseDate(value, fieldConfig.format);
+    value = parseDate(value, fieldConfig.format, fieldConfig.timezone);
   }
 
   return value;
@@ -141,8 +145,13 @@ function resolveUrl(href, baseUrl) {
 /**
  * 날짜 문자열을 파싱합니다.
  * format이 주어지면 dayjs로 파싱, 아니면 Date.parse 시도.
+ *
+ * - format은 문자열 또는 배열. 배열이면 엄격(strict) 매칭으로 앞에서부터 시도합니다.
+ * - timezone(IANA, 예: "Asia/Seoul")이 주어지면 해당 시간대 기준으로 해석합니다.
+ * - "HH:mm"(오늘), "MM.DD"(올해)처럼 연/월/일이 빠진 포맷은 timezone 기준 현재 날짜로 보완하며,
+ *   결과가 미래가 되면 하루/1년 전으로 보정합니다.
  */
-function parseDate(text, format) {
+function parseDate(text, format, timezone, now = new Date()) {
   if (!text) return null;
   text = text.trim();
 
@@ -160,15 +169,18 @@ function parseDate(text, format) {
       '개월': 'month',
       '달': 'month',
     };
-    return dayjs().subtract(amount, unitMap[unit] || 'minute').toISOString();
+    return dayjs(now).subtract(amount, unitMap[unit] || 'minute').toISOString();
   }
 
   // 포맷으로 파싱 시도
-  if (format) {
-    const parsed = dayjs(text, format);
-    if (parsed.isValid()) {
-      return parsed.toISOString();
+  if (Array.isArray(format)) {
+    for (const f of format) {
+      const parsed = parseWithFormat(text, f, timezone, now, true);
+      if (parsed) return parsed;
     }
+  } else if (format) {
+    const parsed = parseWithFormat(text, format, timezone, now, false);
+    if (parsed) return parsed;
   }
 
   // 일반 Date.parse
@@ -178,6 +190,41 @@ function parseDate(text, format) {
   }
 
   return null;
+}
+
+/**
+ * 단일 포맷으로 파싱합니다. 실패 시 null.
+ */
+function parseWithFormat(text, format, timezone, now, strict) {
+  if (!timezone) {
+    const parsed = dayjs(text, format, strict);
+    return parsed.isValid() ? parsed.toISOString() : null;
+  }
+
+  // 빠진 날짜 요소를 timezone 기준 현재 날짜로 채움
+  const today = dayjs(now).tz(timezone);
+  let fullText = text;
+  let fullFormat = format;
+  const hasYear = /Y/.test(format);
+  const hasDay = /D/.test(format);
+  if (!hasDay) {
+    fullText = `${today.format('YYYY-MM-DD')} ${text}`;
+    fullFormat = `YYYY-MM-DD ${format}`;
+  } else if (!hasYear) {
+    fullText = `${today.format('YYYY')} ${text}`;
+    fullFormat = `YYYY ${format}`;
+  }
+
+  const local = dayjs(fullText, fullFormat, strict);
+  if (!local.isValid()) return null;
+
+  // 파싱된 벽시계 시각을 timezone 시각으로 해석
+  let parsed = dayjs.tz(local.format('YYYY-MM-DDTHH:mm:ss'), timezone);
+  if (parsed.isAfter(dayjs(now).add(1, 'minute'))) {
+    if (!hasDay) parsed = parsed.subtract(1, 'day');
+    else if (!hasYear) parsed = parsed.subtract(1, 'year');
+  }
+  return parsed.toISOString();
 }
 
 module.exports = { extractField, parseNumber, resolveUrl, parseDate };

@@ -19,9 +19,10 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
-const { scrape } = require('./scraper-engine');
+const { scrape, mergeRequestConfig } = require('./scraper-engine');
 const { applyFilters, filterSummary } = require('./filter');
-const { generateRSS, generateMeta } = require('./rss-generator');
+const { generateRSS, generateMeta, selectItems, OUTPUT_DIR } = require('./rss-generator');
+const { fillContents } = require('./content-fetcher');
 
 // ─── CLI 옵션 파싱 ───
 const args = process.argv.slice(2);
@@ -94,7 +95,6 @@ async function processFeed(feedConfig, globalConfig) {
   const summary = filterSummary(items.length, filtered.length, feedConfig.filters || {});
   console.log(`  필터링: ${summary}`);
 
-  // 3. RSS 생성
   const globalOutput = globalConfig.output || {};
   const outputConfig = {
     maxItems: globalOutput.maxItems || 30,
@@ -102,6 +102,18 @@ async function processFeed(feedConfig, globalConfig) {
     ...feedConfig.output,
   };
 
+  // 3. 본문 수집 (content 설정이 있는 피드만, RSS에 포함될 항목만)
+  if (feedConfig.content?.selector) {
+    const included = selectItems(filtered, outputConfig);
+    const reqConfig = mergeRequestConfig(feedConfig.request, globalConfig.request);
+    const previousXml = path.join(OUTPUT_DIR, outputConfig.filename);
+    const stats = await fillContents(included, feedConfig.content, reqConfig, previousXml);
+    console.log(
+      `  본문: 캐시 ${stats.cached} / 신규 ${stats.fetched} / 실패 ${stats.failed} / 다음 실행 ${stats.skipped}`
+    );
+  }
+
+  // 4. RSS 생성
   if (OPTIONS.dryRun) {
     const xml = generateRSS(filtered, outputConfig, true);
     console.log(`  [DRY-RUN] RSS 생성 완료 (${filtered.slice(0, outputConfig.maxItems).length}개 항목, 파일 미저장)`);

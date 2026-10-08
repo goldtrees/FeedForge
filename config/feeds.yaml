@@ -46,7 +46,9 @@ feeds:
       date:
         selector: ".time, td.time"
         extract: "text"
-        format: "YYYY.MM.DD HH:mm"
+        # 목록 표기: 오늘 "HH:mm" / 올해 "MM.DD" / 이전 "YY.MM.DD" (KST)
+        format: ["HH:mm", "MM.DD", "YY.MM.DD"]
+        timezone: "Asia/Seoul"
       category:
         selector: "td.cate, .cate"
         extract: "text"
@@ -58,6 +60,11 @@ feeds:
       postNumber:
         selector: ".no, td.no"
         extract: "text"
+    # 본문 수집 → <content:encoded> (이미지/동영상/임베드를 리더 앱에서 바로 표시)
+    content:
+      selector: "article[itemprop=articleBody] .xe_content"
+      maxFetch: 30            # 실행당 신규 상세 페이지 요청 상한 (이전 피드에 있는 본문은 재사용)
+      delay: 300              # 상세 페이지 요청 간 딜레이 (ms)
     filters:
       includeKeywords: []
       excludeKeywords: ["광고", "공지", "인터넷가입", "야간상담", "비밀혜택"]

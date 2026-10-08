@@ -214,4 +214,4 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-module.exports = { scrape, fetchPage, parsePage, deduplicateItems, buildPageUrl };
+module.exports = { scrape, fetchPage, parsePage, deduplicateItems, buildPageUrl, mergeRequestConfig };

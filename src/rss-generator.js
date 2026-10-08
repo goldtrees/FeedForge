@@ -28,11 +28,7 @@ function generateRSS(items, outputConfig, dryRun = false) {
     sortOrder = 'desc',
   } = outputConfig;
 
-  // 날짜 기준 정렬 (desc: 최신순, asc: 오래된순)
-  const sortedItems = sortByDate(items, sortOrder);
-
-  // 최대 개수 제한
-  const limitedItems = sortedItems.slice(0, maxItems);
+  const limitedItems = selectItems(items, { maxItems, sortOrder });
 
   const feed = new Feed({
     title,
@@ -54,6 +50,10 @@ function generateRSS(items, outputConfig, dryRun = false) {
       author: item.author ? [{ name: item.author }] : [],
       description: buildDescription(item),
     };
+    // 본문 → <content:encoded> (description 포맷은 그대로 유지)
+    if (item.content) {
+      feedItem.content = item.content;
+    }
     if (item.category) {
       feedItem.category = [{ name: item.category }];
     }
@@ -73,6 +73,13 @@ function generateRSS(items, outputConfig, dryRun = false) {
   }
 
   return xml;
+}
+
+/**
+ * RSS에 포함될 항목을 고릅니다: 날짜 기준 정렬(desc: 최신순, asc: 오래된순) 후 최대 개수 제한.
+ */
+function selectItems(items, { maxItems = 30, sortOrder = 'desc' } = {}) {
+  return sortByDate(items, sortOrder).slice(0, maxItems);
 }
 
 /**
@@ -131,4 +138,4 @@ function generateMeta(feedResults) {
   return meta;
 }
 
-module.exports = { generateRSS, generateMeta, OUTPUT_DIR };
+module.exports = { generateRSS, generateMeta, selectItems, OUTPUT_DIR };
