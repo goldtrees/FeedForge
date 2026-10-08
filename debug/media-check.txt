@@ -1,0 +1,12 @@
+== https://img-cdn.theqoo.net/aGucWN.jpg
+noref: 200 image/jpeg
+reeder-ua noref: 200 image/jpeg
+ref theqoo: 200 image/jpeg
+ref other: 403 text/html
+== https://img-cdn.theqoo.net/xLTZle.jpg
+noref: 200 image/jpeg
+reeder-ua noref: 200 image/jpeg
+ref theqoo: 200 image/jpeg
+ref other: 403 text/html
+== post page with Reeder UA
+200
