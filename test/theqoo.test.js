@@ -20,6 +20,8 @@ const theqoo = config.feeds.find((f) => f.name === 'theqoo-square');
 const dateCfg = theqoo.selectors.date;
 const postHtml = fs.readFileSync(path.join(__dirname, 'fixtures', 'theqoo-post-body.html'), 'utf-8');
 const POST_URL = 'https://theqoo.net/square/4369549137';
+// 더쿠 피드는 본문 수집을 쓰지 않지만(목록 썸네일 방지) 기능 자체는 더쿠 실제 HTML로 검증
+const CONTENT_CFG = { selector: 'article[itemprop=articleBody] .xe_content' };
 
 // 2026-10-09 07:24 KST
 const NOW = new Date('2026-10-08T22:24:00Z');
@@ -74,7 +76,7 @@ async function runTest(name, fn) {
   console.log('\n── 더쿠 본문 수집 테스트 ──\n');
 
   await runTest('실제 게시물: 이미지/텍스트 추출, 광고 제거, Referer 미전송', () => {
-    const html = extractContent(postHtml, theqoo.content.selector, POST_URL);
+    const html = extractContent(postHtml, CONTENT_CFG.selector, POST_URL);
     assert.ok(html.includes('<img src="https://img-cdn.theqoo.net/aGucWN.jpg"'));
     assert.ok(html.includes('<img src="https://img-cdn.theqoo.net/xLTZle.jpg"'));
     assert.ok(html.includes('referrerpolicy="no-referrer"'));
@@ -129,13 +131,19 @@ async function runTest(name, fn) {
       requested.push(url);
       return postHtml;
     };
-    const stats = await fillContents(items, { ...theqoo.content, maxFetch: 1, delay: 0 }, {}, tmp, fetcher);
+    const stats = await fillContents(items, { ...CONTENT_CFG, maxFetch: 1, delay: 0 }, {}, tmp, fetcher);
 
     assert.deepStrictEqual(requested, ['https://theqoo.net/square/2']);
     assert.deepStrictEqual(stats, { cached: 1, fetched: 1, failed: 0, skipped: 1 });
     assert.strictEqual(items[0].content, '<p>캐시</p>');
     assert.ok(items[1].content.includes('aGucWN.jpg'));
     assert.strictEqual(items[2].content, undefined);
+  });
+
+  await runTest('더쿠 피드 설정: 본문 수집 비활성 (목록 썸네일 미표시)', () => {
+    assert.strictEqual(theqoo.content, undefined);
+    const xml = generateRSS([{ title: 't', link: POST_URL, date: NOW.toISOString() }], { filename: 'x.xml' }, true);
+    assert.ok(!xml.includes('content:encoded'));
   });
 
   await runTest('RSS: description 포맷 유지 + content:encoded 추가', () => {

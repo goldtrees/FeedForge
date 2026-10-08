@@ -60,11 +60,6 @@ feeds:
       postNumber:
         selector: ".no, td.no"
         extract: "text"
-    # 본문 수집 → <content:encoded> (이미지/동영상/임베드를 리더 앱에서 바로 표시)
-    content:
-      selector: "article[itemprop=articleBody] .xe_content"
-      maxFetch: 30            # 실행당 신규 상세 페이지 요청 상한 (이전 피드에 있는 본문은 재사용)
-      delay: 300              # 상세 페이지 요청 간 딜레이 (ms)
     filters:
       includeKeywords: []
       excludeKeywords: ["광고", "공지", "인터넷가입", "야간상담", "비밀혜택"]
@@ -177,6 +172,10 @@ feeds:
 #     author:
 #       selector: ".post-author"
 #       extract: "text"
+#   content:                         # (선택) 본문 수집 → <content:encoded>
+#     selector: ".post-content"      #   리더 목록에 본문 첫 이미지가 썸네일로 표시될 수 있음
+#     maxFetch: 30                   #   실행당 신규 상세 페이지 요청 상한
+#     delay: 300                     #   요청 간 딜레이 (ms)
 #   filters:
 #     includeKeywords: ["키워드1", "키워드2"]
 #     excludeKeywords: ["제외어"]
