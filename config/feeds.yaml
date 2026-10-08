@@ -97,6 +97,7 @@ feeds:
         selector: ".list_subject"
         extract: "attr:href"
         baseUrl: "https://www.clien.net"
+        stripParams: ["po", "od", "category", "groupCd"]  # 목록 위치 파라미터 제거 (GUID 고정)
       date:
         selector: ".timestamp"
         extract: "text"
