@@ -8,6 +8,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const iconv = require('iconv-lite');
+const { execFile } = require('child_process');
 const { extractField } = require('./extractors');
 
 const DEFAULT_USER_AGENT =
@@ -93,8 +94,12 @@ function deduplicateItems(items) {
 /**
  * HTTP 요청으로 페이지 HTML을 가져옵니다.
  * 인코딩 변환, 재시도, 커스텀 헤더를 지원합니다.
+ *
+ * reqConfig.client — 수집 방식
+ *   - "axios" (기본): Node HTTP 클라이언트
+ *   - "curl": 시스템 curl 실행 (Node 클라이언트가 차단되는 사이트용, curl 설치 필요)
  */
-async function fetchPage(url, reqConfig) {
+async function fetchPage(url, reqConfig = {}) {
   const {
     encoding = 'utf-8',
     userAgent = DEFAULT_USER_AGENT,
@@ -102,11 +107,15 @@ async function fetchPage(url, reqConfig) {
     timeout = 15000,
     retries = 3,
     retryDelay = 2000,
+    client = 'axios',
   } = reqConfig;
 
-  const axiosConfig = {
+  if (!SUPPORTED_CLIENTS.includes(client)) {
+    throw new Error(`지원하지 않는 request.client: ${client} (사용 가능: ${SUPPORTED_CLIENTS.join(', ')})`);
+  }
+
+  const opts = {
     url,
-    method: 'GET',
     timeout,
     headers: {
       'User-Agent': userAgent,
@@ -114,25 +123,20 @@ async function fetchPage(url, reqConfig) {
       'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
       ...headers,
     },
-    // 비UTF-8 인코딩 처리를 위해 arraybuffer로 받기
-    responseType: encoding.toLowerCase() !== 'utf-8' ? 'arraybuffer' : 'text',
   };
+  const request = client === 'curl' ? requestWithCurl : requestWithAxios;
 
   let lastError;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const response = await axios(axiosConfig);
-
+      const buf = await request(opts);
       // 인코딩 변환
-      if (encoding.toLowerCase() !== 'utf-8') {
-        return iconv.decode(Buffer.from(response.data), encoding);
-      }
-      return response.data;
+      return encoding.toLowerCase() === 'utf-8' ? buf.toString('utf-8') : iconv.decode(buf, encoding);
     } catch (err) {
       lastError = err;
-      const status = err.response?.status;
+      const status = err.status ?? err.response?.status;
       console.warn(
-        `  [${attempt}/${retries}] ${url} 요청 실패: ${err.message}${status ? ` (HTTP ${status})` : ''}`
+        `  [${attempt}/${retries}] ${url} 요청 실패 (${client}): ${err.message}${status ? ` (HTTP ${status})` : ''}`
       );
       if (attempt < retries) {
         await sleep(retryDelay * attempt);
@@ -141,6 +145,74 @@ async function fetchPage(url, reqConfig) {
   }
 
   throw new Error(`${url} 페이지 요청 실패 (${retries}회 재시도 후): ${lastError.message}`);
+}
+
+const SUPPORTED_CLIENTS = ['axios', 'curl'];
+
+/** axios로 요청 → Buffer */
+async function requestWithAxios({ url, timeout, headers }) {
+  const response = await axios({ url, method: 'GET', timeout, headers, responseType: 'arraybuffer' });
+  return Buffer.from(response.data);
+}
+
+// curl 출력 끝에 붙여 본문과 HTTP 상태 코드를 분리하기 위한 구분자
+const CURL_STATUS_MARKER = '\n__FEEDFORGE_HTTP_STATUS__:';
+
+/**
+ * curl 실행 인자를 생성합니다.
+ */
+function buildCurlArgs({ url, timeout, headers }) {
+  const args = [
+    '--silent',
+    '--show-error',
+    '--location',
+    '--compressed',
+    '--max-time', String(Math.max(1, Math.ceil(timeout / 1000))),
+    '--write-out', `${CURL_STATUS_MARKER}%{http_code}`,
+  ];
+  for (const [name, value] of Object.entries(headers)) {
+    if (name.toLowerCase() === 'user-agent') args.push('--user-agent', String(value));
+    else args.push('--header', `${name}: ${value}`);
+  }
+  args.push('--', url);
+  return args;
+}
+
+/**
+ * curl 표준출력(Buffer)에서 본문과 상태 코드를 분리합니다.
+ * HTTP 2xx/3xx가 아니면 err.status가 설정된 Error를 던집니다.
+ */
+function parseCurlOutput(stdout) {
+  const out = Buffer.isBuffer(stdout) ? stdout : Buffer.from(stdout);
+  const idx = out.lastIndexOf(CURL_STATUS_MARKER);
+  if (idx < 0) throw new Error('curl 응답에서 상태 코드를 찾을 수 없습니다');
+  const status = parseInt(out.subarray(idx + Buffer.byteLength(CURL_STATUS_MARKER)).toString(), 10);
+  if (!(status >= 200 && status < 400)) {
+    const err = new Error(`Request failed with status code ${status}`);
+    err.status = status;
+    throw err;
+  }
+  return out.subarray(0, idx);
+}
+
+/**
+ * 시스템 curl로 요청 → Buffer
+ * (셸을 거치지 않고 execFile로 인자를 직접 전달)
+ */
+function requestWithCurl(opts, runner = execFile) {
+  return new Promise((resolve, reject) => {
+    runner('curl', buildCurlArgs(opts), { encoding: 'buffer', maxBuffer: 32 * 1024 * 1024 }, (err, stdout, stderr) => {
+      if (err) {
+        const msg = err.code === 'ENOENT' ? 'curl이 설치되어 있지 않습니다' : String(stderr || '').trim() || err.message;
+        return reject(new Error(`curl 실패: ${msg}`));
+      }
+      try {
+        resolve(parseCurlOutput(stdout));
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
 }
 
 /**
@@ -214,4 +286,15 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-module.exports = { scrape, fetchPage, parsePage, deduplicateItems, buildPageUrl, mergeRequestConfig };
+module.exports = {
+  scrape,
+  fetchPage,
+  parsePage,
+  deduplicateItems,
+  buildPageUrl,
+  mergeRequestConfig,
+  requestWithCurl,
+  buildCurlArgs,
+  parseCurlOutput,
+  SUPPORTED_CLIENTS,
+};

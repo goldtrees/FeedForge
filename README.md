@@ -149,6 +149,7 @@ git add . && git commit -m "feat: add my-new-site feed" && git push
 | `headers` | `{}` | 추가 HTTP 헤더 |
 | `timeout` | `15000` | 요청 타임아웃 (ms) |
 | `retries` | `3` | 재시도 횟수 |
+| `client` | `axios` | 수집 방식. `axios`(Node HTTP) / `curl`(시스템 curl 실행 — Node 요청이 403 등으로 차단되는 사이트용, curl 설치 필요) |
 
 ## CLI 옵션
 

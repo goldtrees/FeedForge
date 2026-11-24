@@ -7,7 +7,7 @@
     "generate": "node src/index.js",
     "dry-run": "node src/index.js --dry-run --verbose",
     "validate": "node src/index.js --validate",
-    "test": "node test/rss-generator.test.js && node test/scraper-engine.test.js && node test/theqoo.test.js"
+    "test": "node test/rss-generator.test.js && node test/scraper-engine.test.js && node test/theqoo.test.js && node test/fetch-client.test.js"
   },
   "keywords": ["rss", "feed", "scraper", "github-pages"],
   "license": "MIT",

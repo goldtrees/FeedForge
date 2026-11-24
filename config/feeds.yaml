@@ -10,6 +10,7 @@ global:
     timeout: 15000
     retries: 3
     retryDelay: 2000
+    client: "axios"           # 수집 방식: axios(기본, Node HTTP) / curl(시스템 curl 실행)
   # 기본 출력 설정
   output:
     maxItems: 30
@@ -21,6 +22,7 @@ feeds:
     url: "https://theqoo.net/square"
     request:
       encoding: "utf-8"
+      client: "curl"          # Node(axios) 요청은 Cloudflare에서 403 차단됨 → curl 사용
     pagination:
       param: "page"           # 페이지 파라미터 이름
       startPage: 1            # 시작 페이지 번호
@@ -135,6 +137,7 @@ feeds:
 #   url: "https://example.com/board"
 #   request:
 #     encoding: "utf-8"              # euc-kr, utf-8 등
+#     client: "axios"                # 수집 방식: axios(기본) / curl (Node 요청이 차단되는 사이트)
 #     headers:                       # 필요 시 커스텀 헤더
 #       Referer: "https://example.com"
 #   pagination:
