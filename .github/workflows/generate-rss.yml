@@ -36,18 +36,9 @@ jobs:
         run: npm run validate
 
       - name: Generate RSS feeds
-        run: npm run generate -- --feed theqoo-square --verbose
-
-      - name: Verify theqoo items (temporary)
-        run: |
-          n=$(grep -c '<item>' docs/feeds/theqoo-square.xml || true)
-          echo "theqoo-square items: $n"
-          grep -o '<title><!\[CDATA\[[^]]*' docs/feeds/theqoo-square.xml | head -6
-          grep -A4 '"theqoo-square"' docs/meta.json
-          test "$n" -gt 0
+        run: npm run generate
 
       - name: Commit and push changes
-        if: false
         run: |
           git config user.name "FeedForge Bot"
           git config user.email "feedforge-bot@users.noreply.github.com"
