@@ -33,7 +33,7 @@ jobs:
         run: npm ci
 
       - name: Diagnose theqoo (temporary)
-        run: bash scripts/diag-theqoo.sh
+        run: node scripts/diag-node.js
 
       - name: Stop (temporary diag run)
         run: exit 0
