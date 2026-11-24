@@ -19,7 +19,7 @@
 const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
-const { scrape, mergeRequestConfig } = require('./scraper-engine');
+const { scrape, mergeRequestConfig, SUPPORTED_CLIENTS } = require('./scraper-engine');
 const { applyFilters, filterSummary } = require('./filter');
 const { generateRSS, generateMeta, selectItems, OUTPUT_DIR } = require('./rss-generator');
 const { fillContents } = require('./content-fetcher');
@@ -64,6 +64,10 @@ function validateConfig(config) {
       if (!feed.selectors.link) errors.push(`${prefix}: selectors.link는 필수입니다.`);
     }
     if (!feed.output?.filename) errors.push(`${prefix}: output.filename은 필수입니다.`);
+    const client = feed.request?.client ?? config.global?.request?.client;
+    if (client !== undefined && !SUPPORTED_CLIENTS.includes(client)) {
+      errors.push(`${prefix}: request.client는 ${SUPPORTED_CLIENTS.join(' / ')} 중 하나여야 합니다. (현재: ${client})`);
+    }
   });
 
   return errors;
